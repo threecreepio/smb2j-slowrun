@@ -3,3 +3,6 @@
 *.dbg
 *.fds
 *.deb
+*.ips
+*.zip
+*.dep
