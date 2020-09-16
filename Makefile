@@ -6,10 +6,10 @@ IPS = flips.exe
 .PHONY: clean
 
 %.o: %.asm
-	$(AS) -g --create-dep "$@.dep" --debug-info $< -o $@
+	$(AS) -g -l "$@.lst" --create-dep "$@.dep" --debug-info $< -o $@
 
 %.o.bin: %.asm
-	$(AS) -g --create-dep "$@.dep" --debug-info $< -o $@.o
+	$(AS) -g -l "$@.lst" --create-dep "$@.dep" --debug-info $< -o $@.o
 	$(LD) $@.o -C layoutbin -o $@
 
 smb2j-glitchedworlds.zip: patch.ips
@@ -22,6 +22,6 @@ main.fds: layout sm2data2.o.bin sm2data3.o.bin sm2data4.o.bin fdswrap.o
 	$(LD) --dbgfile $@.dbg -C layout fdswrap.o -o $@
 
 clean:
-	rm -f smb2j-glitchedworlds.zip main*.fds patch.ips *.o *.o.bin
+	rm -f *.dep smb2j-glitchedworlds.zip main*.fds patch.ips *.o *.o.bin
 
 include $(wildcard *.dep)
