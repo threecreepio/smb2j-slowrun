@@ -630,7 +630,7 @@ SuperPlayerMsg:
 
 ;-------------------------------------------------------------------------------------
 
- .res $ca80 - *, $00
+ .res $ca80 - *, $FF
 
 ;level 9-3
 E_CastleArea9:
@@ -715,7 +715,7 @@ L_WaterArea8:
 
 ;-------------------------------------------------------------------------------------
 
- .res $cc5f - *, $00
+ .res $cc5f - *, $FF
 
 AlternateSoundEngine:
     lda GamePauseStatus     ;check to see if game is paused
