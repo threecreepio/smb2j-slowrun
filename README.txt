@@ -12,10 +12,13 @@ A program like Lunar IPS will work just as well.
 Building
 --------
 
-To build this project, you will need CA65 and Make.
+To build this project from source, you will need CA65 and Make.
 
-Place the original ROM of SMB2J in this folder and name it "original.fds", then run "make" in this folder.
+First download the source, either using git or by downloading https://github.com/threecreepio/smb2j-slowrun/archive/master.zip and extract the archive into an empty folder.
 
+Then place the original ROM of SMB2J in the folder named "original.fds".
+
+Finally run the command "make" in the folder and a "main.fds" file will be created.
 
 Good luck!
 /threecreepio
