@@ -887,7 +887,9 @@ InitVRAMVars:
    cli
    jsr SoundEngine           ;run subs that need to be run on every frame
    jsr ReadJoypads
-   jsr PauseRoutine
+   nop
+   nop
+   nop
    jsr UpdateTopScore
    lda GamePauseStatus       ;check d0 of game pause flags
    lsr                       ;if set, branch to skip 
@@ -995,42 +997,49 @@ ExitIRQ:    pla
 
 ;-------------------------------------------------------------------------------------
 
-PauseRoutine:
-               lda OperMode           ;are we in victory mode?
-               cmp #VictoryMode       ;if so, go ahead
-               beq ChkPauseTimer
-               cmp #GameMode          ;are we in game mode?
-               bne ExitPause          ;if not, leave
-               lda OperMode_Task      ;if we are in game mode, are we running game engine?
-               cmp #$04
-               bne ExitPause          ;if not, leave
-ChkPauseTimer: lda GamePauseTimer     ;check if pause timer is still counting down
-               beq ChkStart
-               dec GamePauseTimer     ;if so, decrement and leave
-               rts
-ChkStart:      lda SavedJoypad1Bits   ;check to see if start is pressed
-               and #Start_Button
-               beq ClrPauseTimer
-               lda GamePauseStatus    ;check to see if timer flag is set
-               and #%10000000         ;and if so, do not reset timer (residual,
-               bne ExitPause          ;joypad reading routine makes this unnecessary)
-               lda #$2b               ;set pause timer
-               sta GamePauseTimer
-               lda GamePauseStatus
-               tay
-               iny                    ;set pause sfx queue for next pause mode
-               sty PauseSoundQueue
-               eor #%00000001         ;invert d0 and set d7
-               ora #%10000000
-               bne SetPause           ;unconditional branch
-ClrPauseTimer: lda GamePauseStatus    ;clear timer flag if timer is at zero and start button
-               and #%01111111         ;is not pressed
-SetPause:      sta GamePauseStatus
-ExitPause:     rts
+UpdateWorldLevelNumbers:
+      lda #Silence
+      sta EventMusicQueue
+      lda LevelNumber
+      cmp #$04
+      bcs @UpdateWorld2
+      rts
+@UpdateWorld2:
+      lda WorldNumber
+      cmp #$07
+      bcs @EndGame
+      cmp #$03
+      bcc @NextWorld
+      lda HardWorldFlag
+      bne @EndGame
+      ; move to next world
+@NextWorld:
+      inc WorldNumber
+      lda #0
+      sta LevelNumber
+      sta AreaNumber
+      rts
+@EndGame:
+      ; we're in 9-4 or D-4, lets wrap it up
+      jsr SetupVictoryMode
+      lda #5
+      sta OperMode_Task
+      lda #2
+      sta OperMode
+      rts
+
+ApplyHurtHole:
+      sta GameEngineSubroutine
+      lda #1
+      sta PlayerSize
+      lda #0
+      sta PlayerStatus
+      rts
 
 
 ;-------------------------------------------------------------------------------------
 ;$00 - used for preset value
+.res $622D - *, $00
 
 SpriteShuffler:
                ldy AreaType                ;residual code, this value is never used
@@ -1642,7 +1651,7 @@ TimeUp:
 GameOver:
   .byte $21, $6b, $09, $10, $0a, $16, $0e, $24 ;"GAME OVER"
   .byte $18, $1f, $0e, $1b
-  .byte $21, $eb, $08, $0c, $18, $17, $1d, $12, $17, $1e, $0e ;"CONTINUE"
+  .byte $ff, $eb, $08, $0c, $18, $17, $1d, $12, $17, $1e, $0e ;"CONTINUE"
   .byte $22, $0c, $47, $24
   .byte $22, $4b, $05, $1b, $0e, $1d, $1b, $22 ;"RETRY"
   .byte $ff
@@ -1658,7 +1667,7 @@ WarpZone:
   .byte $00
 
 WarpZoneNumbers:
-  .byte $02, $03, $04, $01, $06, $07, $08, $05, $0b, $0c, $0d
+  .byte $02, $03, $04, $04, $06, $07, $08, $09, $0b, $0c, $0d
 
 GameTextOffsets:
    .byte <(TopStatusBarLine-GameText)
@@ -2771,7 +2780,7 @@ PlayerLoseLife:
              lda #GameOverMode        ;switch to game over mode
              sta OperMode             ;and leave
              rts
-StillInGame: lda WorldNumber          ;multiply world number by 2 and use
+StillInGame: jmp SkipLevel          ;multiply world number by 2 and use
              asl                      ;as offset
              tax
              lda LevelNumber          ;if in level 3 or 4, increment
@@ -4556,15 +4565,15 @@ ChkHoleX:   cmp $07                     ;compare vertical high byte with value s
             ldy EventMusicBuffer        ;check to see if music is still playing
             bne ExitCtrl                ;branch to leave if so
             lda #$06                    ;otherwise set to run lose life routine
-            sta GameEngineSubroutine    ;on next frame
-ExitCtrl:   rts                         ;leave
+            jmp ApplyHurtHole
 
+.res $7D13 - *, $00
 CloudExit:
       lda #$00
       sta JoypadOverride      ;clear controller override bits if any are set
       jsr SetEntr             ;do sub to set secondary mode
       inc AltEntranceControl  ;set mode of entry to 3
-      rts
+ExitCtrl:   rts                         ;leave
 
 ;-------------------------------------------------------------------------------------
 
@@ -4752,6 +4761,7 @@ InCastle: lda #%00100000            ;set player's background priority bit to
 RdyNextA: lda StarFlagTaskControl
           cmp #$05                  ;if star flag task control not yet set
           bne ExitNA                ;beyond last valid task number, branch to leave
+SkipLevel:
           inc LevelNumber           ;increment level number used for game logic
           lda LevelNumber
           cmp #$03                  ;check to see if we have yet reached level -4
@@ -4775,8 +4785,8 @@ NotW9:    jsr LoadAreaPointer       ;get new level pointer
           inc FetchNewGameTimerFlag ;set flag to load new game timer
           jsr ChgAreaMode           ;do sub to set secondary mode, disable screen and sprite 0
           sta HalfwayPage           ;reset halfway page to 0 (beginning)
-          lda #Silence
-          sta EventMusicQueue       ;silence music and leave
+          jmp UpdateWorldLevelNumbers
+          nop
 ExitNA:   rts
 
 ;-------------------------------------------------------------------------------------
@@ -14403,7 +14413,9 @@ GameOverMenu:
             lda SavedJoypadBits          ;if player pressed the start button
             and #Start_Button            ;then either continue or start over
             bne ContinueOrRetry
-            lda SavedJoypadBits
+            rts
+            nop
+            nop
             and #Select_Button           ;if player pressed the select button
             beq ChgSel                   ;then branch to select "continue" or "retry"
             ldx SelectTimer              ;if select timer not expired while
@@ -14423,9 +14435,9 @@ ChgSelLoop: lda GameOverCursorData,y     ;set up cursor sprite tile, attribute
             sta Sprite_Data
             rts
 
-ContinueOrRetry:
   lda ContinueMenuSelect       ;if player selected "continue"
   beq Continue                 ;then branch to continue
+ContinueOrRetry:
   lda #$00
   sta CompletedWorlds          ;otherwise init completed worlds flags
   jmp TerminateGame            ;and end the game
@@ -14906,8 +14918,12 @@ TitleScreenGfxData:
        .byte $21, $c4, $19, $5f, $95, $95, $95, $95, $95, $95, $95, $95, $97
        .byte $98, $78, $95, $96, $95, $95, $97, $98, $97, $98, $95, $78, $95
        .byte $f0, $7a
-       .byte $21, $ef, $0e, $cf, $01, $09, $08, $06, $24, $17, $12, $17, $1d
-       .byte $0e, $17, $0d, $18
+       .byte $21, $ef, $0e
+       ; copyright notice
+
+       .byte $24, $24, $1D, $11, $1B, $0E, $0E, $0C, $1B, $0E, $0E, $19, $12, $18
+       ;.byte $cf, $01, $09, $08, $06, $24, $17, $12, $17, $1d, $0e, $17, $0d, $18
+
        .byte $22, $4d, $0a, $16, $0a, $1b, $12, $18, $24, $10, $0a, $16, $0e
        .byte $22, $8d, $0a, $15, $1e, $12, $10, $12, $24, $10, $0a, $16, $0e
        .byte $22, $eb, $04, $1d, $18, $19, $28

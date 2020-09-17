@@ -14,7 +14,7 @@ VRAM = 2
  .org $0
 
 ;FWNES header
- ;.byte "FDS",$1a,1,0,0,0,0,0,0,0,0,0,0,0
+ .byte "FDS",$1a,1,0,0,0,0,0,0,0,0,0,0,0
 
  .byte DiskInfoBlock
  .byte "*NINTENDO-HVC*"
@@ -127,4 +127,4 @@ Data4End:
  .byte PRG
 
  .byte FileDataBlock
- .byte 0
+ .byte 24
