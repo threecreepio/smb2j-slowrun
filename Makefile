@@ -12,7 +12,7 @@ IPS = flips.exe
 	$(AS) -g -l "$@.lst" --create-dep "$@.dep" --debug-info $< -o $@.o
 	$(LD) $@.o -C layoutbin -o $@
 
-smb2j-glitchedworlds.zip: patch.ips
+smb2j-slowmode.zip: patch.ips README.md
 	zip $@ patch.ips README.md
 
 patch.ips: main.fds
@@ -22,6 +22,6 @@ main.fds: layout sm2data2.o.bin sm2data3.o.bin sm2data4.o.bin fdswrap.o
 	$(LD) --dbgfile $@.dbg -C layout fdswrap.o -o $@
 
 clean:
-	rm -f *.dep smb2j-glitchedworlds.zip main*.fds patch.ips *.o *.o.bin
+	rm -f *.dep smb2j-slowmode.zip main*.fds patch.ips *.o *.o.bin
 
 include $(wildcard *.dep)
