@@ -12,8 +12,8 @@ IPS = flips.exe
 	$(AS) -g -l "$@.lst" --create-dep "$@.dep" --debug-info $< -o $@.o
 	$(LD) $@.o -C layoutbin -o $@
 
-smb2j-slowmode.zip: patch.ips README.md
-	zip $@ patch.ips README.md
+smb2j-slowmode.zip: patch.ips README.txt
+	zip $@ patch.ips README.txt
 
 patch.ips: main.fds
 	$(IPS) --create --ips "original.fds" "main.fds" $@
