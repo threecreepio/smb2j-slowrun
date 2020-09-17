@@ -1,12 +1,13 @@
 SMB2j Slow Run
 ===============
 
-To apply this patch, go here:
+To get the latest version of the patch, check the releases:
+https://github.com/threecreepio/smb2j-slowrun/releases
+
+You can use this site to apply the IPS file to an original SMB2j ROM:
 https://www.romhacking.net/patch/
 
-Use the original SMB2j ROM in the "ROM file" and "patch.ips" as the patch.
-
-You can also use a program like Lunar IPS.
+A program like Lunar IPS will work just as well.
 
 Building
 --------
